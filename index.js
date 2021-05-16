@@ -4,17 +4,15 @@ const {
   By,
   Key,
   until
-} = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
-const { stalenessOf, elementsLocated } = require('selenium-webdriver/lib/until');
-const twilio = require('twilio');
+} = require("selenium-webdriver");
+const chrome = require("selenium-webdriver/chrome");
+const { stalenessOf, elementsLocated } = require("selenium-webdriver/lib/until");
+const twilio = require("twilio");
 
 
 // local development
 const dotenv = require("dotenv");
 dotenv.config();
-
-console.log(process.env.BPUSER)
 
 
 const screen = {
@@ -46,7 +44,7 @@ const meridian = "pm";
 
     // not headless
     const driver = await new Builder()
-      .forBrowser('chrome')
+      .forBrowser("chrome")
       .build();
 
 
@@ -95,15 +93,7 @@ const meridian = "pm";
     datePicker.sendKeys(date, Key.ENTER);
 
     const test = await selectTimes(driver);
-    console.log(test);
-
-
-
-    console.log(2);
-
-
-
-
+  
 
 
     // driver.close();
@@ -111,12 +101,6 @@ const meridian = "pm";
 })();
 
 
-
-// returns true or false
-// if there are no times => return false
-// if there are times
-//   check if within the hour, get times and send, return true
-//   if not within the hour, return false
 const selectTimes = async function(driver) {
     try {
       await driver.wait(until.elementsLocated(By.className("loading")), 1000);
@@ -139,7 +123,7 @@ const selectTimes = async function(driver) {
 
     // book time
     if (timesItems.length) {
-      await Promise.all(timesItems.map(async item => console.log(await item.getText())));
+      const openTimes = await Promise.all(timesItems.map(async item => await item.getText()));
       await sendText('');
       return true;
     }
@@ -153,8 +137,7 @@ const selectCourse = async function(driver, course) {
     await select.click();
 };
 
-
-const sendText = async function(times) {
+const sendText = async function(times, course) {
   const accountSid = process.env.TWSID;
   const authToken = process.env.TWATOKEN;
   const client = twilio(accountSid, authToken);
