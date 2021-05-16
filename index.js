@@ -2,6 +2,7 @@
 const {
   Builder,
   By,
+  Key,
   until
 } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
@@ -12,7 +13,18 @@ const screen = {
 };
 
 const sleep = 700;
+const noTimesAvailable = "Use Time/Day filters to find desired teetime";
+const courses = [
+    "Bethpage Black Course",
+    "Bethpage Blue Course",
+    "Bethpage Green Course",
+    "Bethpage Red Course",
+    "Bethpage Yellow Course"
+];
+
+// user defined
 const date = "05-22-2021";
+const hour = "7";
 
 (async function myFunction() {
     // headless
@@ -29,8 +41,7 @@ const date = "05-22-2021";
 
     // navigate main page
     await driver.get('https://foreupsoftware.com/index.php/booking/19765/2431#teetimes');
-    const bookingClasses = await driver.findElement(By.className("booking-classes"));
-    const resident = await bookingClasses.findElement(By.className("btn-primary"));
+    const resident = await driver.findElement(By.xpath("//button[contains(text(),'Resident')]"));
     await resident.click();
     const login = await driver.findElement(By.className("login"));
     await login.click();
@@ -50,7 +61,6 @@ const date = "05-22-2021";
 
     // recapta
     await driver.sleep(sleep);
-    console.log(0);
     await loginButton.click();
 
     // navigate to reservations
@@ -58,16 +68,16 @@ const date = "05-22-2021";
     const reservations = await driver.findElement(By.xpath("//*[@href='#/teetimes']"));
     await reservations.click();
   
-    // await driver.wait(until.elementLocated(By.id("date-field"), 100));
-    // const datePicker = await driver.findElement(By.id("date-field"));
+    
+    const datePicker = await driver.findElement(By.id("date-field"));
+    await driver.executeScript("document.getElementById('date-field').value=''");
+    datePicker.sendKeys(date, Key.ENTER);
 
-    // // await datePicker.clear();  
-    // datePicker.sendKeys("value", date);
+    const test = await selectTimes(driver);
+    console.log(test);
 
-    const temp = await driver.findElement(By.xpath("//td[contains(text(),'22')] "));
-    console.log(temp);
-    temp.click();
 
+    await selectCourse(driver, '');
 
     console.log(2);
 
@@ -77,3 +87,25 @@ const date = "05-22-2021";
     // driver.close();
     // driver.quit();
 })();
+
+
+
+// returns true or false
+// if there are no times => return false
+// if there are times
+//   check if within the hour, then select, return true
+//   if not within the hour, return false
+const selectTimes = async function(driver) {
+    const times = await driver.findElement(By.id("times"));
+    const noTimes = await until.elementTextContains(times, noTimesAvailable);
+    if (noTimes) {
+        return false;
+    }
+
+};
+
+// changes the course drop down
+const selectCourse = async function(driver, course) {
+    const select = await driver.findElement(By.xpath("//option[contains(text(), 'Bethpage Blue Course')]"));
+    await select.click();
+};

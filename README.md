@@ -6,6 +6,7 @@ todo:
 
 7pm booker:
 - GCP function, at 6:59:500 executes function
+  - start up before then execute
 - checks availability
 - given hour, books first option within the hour
 
@@ -16,3 +17,4 @@ schedule polling:
     - each day
     - each course
 - sends availablity by text/email
+
