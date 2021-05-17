@@ -30,22 +30,19 @@ const courses = [
     "Bethpage Yellow Course"
 ];
 
-// user defined
-const date = "05-19-2021";
-const hour = "5";
 const meridian = "pm";
 
 (async function myFunction() {
     // headless
-    // let driver = await new Builder()
-    //   .forBrowser('chrome')
-    //   .setChromeOptions(new chrome.Options().headless().windowSize(screen))
-    //   .build();
-
-    // not headless
-    const driver = await new Builder()
-      .forBrowser("chrome")
+    let driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(new chrome.Options().headless().windowSize(screen))
       .build();
+
+    // // not headless
+    // const driver = await new Builder()
+    //   .forBrowser("chrome")
+    //   .build();
 
 
     // navigate main page
@@ -85,55 +82,58 @@ const meridian = "pm";
     // const morning = await driver.findElement(By.xpath("//a[@data-value='morning']"));
     // await morning.click();
 
-    await selectCourse(driver, '');
-
-  
+    // set date
     const datePicker = await driver.findElement(By.id("date-field"));
     await driver.executeScript("document.getElementById('date-field').value=''");
-    datePicker.sendKeys(date, Key.ENTER);
+    datePicker.sendKeys(process.env.DATE, Key.ENTER);
 
-    const test = await selectTimes(driver);
-  
+    // iterate through courses
+    for (let i = 0; i < courses.length; i++) {
+        await selectCourse(driver, courses[i]);
 
+        const times = await getTimes(driver);
+        console.log(times); 
+        if (times.length) {
+            console.log('there are times');
+            console.log(`sending text for ${courses[i]} ${times}`);
+            await sendText(times, courses[i]);
+        }
+    }
 
-    // driver.close();
-    // driver.quit();
+    driver.close();
+    driver.quit();
 })();
 
-
-const selectTimes = async function(driver) {
-    try {
-      await driver.wait(until.elementsLocated(By.className("loading")), 1000);
-      const loading = await driver.findElements(By.className("loading"));
-      await driver.wait(until.stalenessOf(loading[0] || null), 100);
-    } catch (error) {
-      console.log(error);
-    };
-
+// selects date
+// finds if times are available
+// if no times => return []
+// if times => return array of times
+const getTimes = async function(driver) {
+    await driver.sleep(sleep);
     const times = await driver.findElement(By.id("times"));
     const text = await times.getText();
     const noTimes = text.includes(noTimesAvailable);
     if (noTimes) {
         console.log('no times available');
-        return false;
+        return [];
     }
 
     // find li with times classname
-    const timesItems = await times.findElements(By.xpath(`//h4[contains(text(),${hour})]`))
+    const timesItems = await times.findElements(By.xpath(`//h4[contains(text(),${process.env.HOUR})]`))
 
     // book time
     if (timesItems.length) {
       const openTimes = await Promise.all(timesItems.map(async item => await item.getText()));
-      await sendText('');
-      return true;
+      return openTimes;
     }
 
-    return false;
+    return [];
 };
 
 // changes the course drop down
 const selectCourse = async function(driver, course) {
-    const select = await driver.findElement(By.xpath("//option[contains(text(), 'Bethpage Blue Course')]"));
+    console.log(`selecting course ${course}`);
+    const select = await driver.findElement(By.xpath(`//option[contains(text(), '${course}')]`));
     await select.click();
 };
 
@@ -144,7 +144,7 @@ const sendText = async function(times, course) {
 
   client.messages
   .create({
-     body: "TEST TEST",
+     body: `\nAVAILABLE TIMES\n${course}\n${times}`,
      from: process.env.NUMBERFM,
      to: process.env.NUMBERTO
    })
