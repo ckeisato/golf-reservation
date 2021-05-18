@@ -1,152 +1,72 @@
-
-const {
-  Builder,
-  By,
-  Key,
-  until
-} = require("selenium-webdriver");
-const chrome = require("selenium-webdriver/chrome");
-const { stalenessOf, elementsLocated } = require("selenium-webdriver/lib/until");
-const twilio = require("twilio");
-
-
-// local development
+const puppeteer = require('puppeteer');
 const dotenv = require("dotenv");
 dotenv.config();
-
-
-const screen = {
-  width: 1440,
-  height: 900
-};
 
 const sleep = 700;
 const noTimesAvailable = "Use Time/Day filters to find desired teetime";
 const courses = [
-    "Bethpage Black Course",
-    "Bethpage Blue Course",
-    "Bethpage Green Course",
-    "Bethpage Red Course",
-    "Bethpage Yellow Course"
+  2433, // "Bethpage Blue Course",
+  2431, // "Bethpage Black Course",
+  2434, // "Bethpage Green Course",
+  2432, // "Bethpage Red Course",
+  2435, // "Bethpage Yellow Course"
 ];
 
 const meridian = "pm";
 
-(async function myFunction() {
-    // headless
-    let driver = await new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(new chrome.Options().headless().windowSize(screen))
-      .build();
+(async () => {
+  // const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    headless: false
+  });
 
-    // // not headless
-    // const driver = await new Builder()
-    //   .forBrowser("chrome")
-    //   .build();
+  const page = await browser.newPage();
+  page.setViewport({
+    width: 1200,
+    height: 2000
+  })
+  await page.goto('https://foreupsoftware.com/index.php/booking/19765/2431#teetimes');
+
+  await page.click("#page button.btn-primary");
+  await page.waitForSelector("#page button.login");
+  await page.click("#page button.login");
+
+  await page.type("#login_email", process.env.BPUSER);
+  await page.type("#login_password", process.env.BPPASS);
+  await page.waitForTimeout(1000);
+  await page.click("#login .modal-footer button.btn")
+  await page.waitForSelector("#login", { hidden: true });
+
+  // go to tee times page
+  await page.waitForTimeout(1000);
+  await page.click("#page .btn");
+
+  // select morning times
+  // await page.click("#page [data-value=morning]");
+
+  // select date
+  await page.evaluate(() => document.getElementById('date-field').value='');
+  await page.type("#page #date-field", process.env.DATE);
+  await page.keyboard.press("Enter");  
+  // iterate through courses
+  for (let i = 0; i < courses.length; i++) {
+
+    console.log("course", courses[i]);
+    // set course
+    await page.evaluate((course) => {
+      document.querySelector(`#page #schedule_select [value='${course}']`).setAttribute("selected", true);
+    }, courses[i]);
+
+    // get times
+    await page.waitForTimeout(sleep);
+    const timeElements = await page.$$("#page #times li h4.start");
+    const times = await Promise.all(timeElements.map(
+      item => page.evaluate(val => val.textContent, item)));
+
+    console.log(times);
 
 
-    // navigate main page
-    await driver.get('https://foreupsoftware.com/index.php/booking/19765/2431#teetimes');
-    const resident = await driver.findElement(By.xpath("//button[contains(text(),'Resident')]"));
-    await resident.click();
-    const login = await driver.findElement(By.className("login"));
+  }
 
-    await login.click();
-
-    // login modal
-    await driver.wait(until.elementLocated(By.id("login"), 100));
-    const email = await driver.findElement(By.id("login_email"));
-    const password = await driver.findElement(By.id("login_password"));
-
-
-    // enter credentials
-    email.sendKeys(process.env.BPUSER);
-    password.sendKeys(process.env.BPPASS);
-
-    const modal = await driver.findElement(By.id("login"));
-    const loginButton = await modal.findElement(By.className("login"));
-
-    // recapta
-    await driver.sleep(sleep);
-    await loginButton.click();
-
-    // navigate to reservations
-    await driver.sleep(sleep);
-    await driver.wait(until.elementLocated(By.xpath("//a[@href='#/teetimes']", 100)));
-
-    const reservations = await driver.findElement(By.xpath("//a[@href='#/teetimes']"));
-    await reservations.click();
-  
-
-    // select morning times
-    // const morning = await driver.findElement(By.xpath("//a[@data-value='morning']"));
-    // await morning.click();
-
-    // set date
-    const datePicker = await driver.findElement(By.id("date-field"));
-    await driver.executeScript("document.getElementById('date-field').value=''");
-    datePicker.sendKeys(process.env.DATE, Key.ENTER);
-
-    // iterate through courses
-    for (let i = 0; i < courses.length; i++) {
-        await selectCourse(driver, courses[i]);
-
-        const times = await getTimes(driver);
-        console.log(times); 
-        if (times.length) {
-            console.log('there are times');
-            console.log(`sending text for ${courses[i]} ${times}`);
-            await sendText(times, courses[i]);
-        }
-    }
-
-    driver.close();
-    driver.quit();
 })();
 
-// selects date
-// finds if times are available
-// if no times => return []
-// if times => return array of times
-const getTimes = async function(driver) {
-    await driver.sleep(sleep);
-    const times = await driver.findElement(By.id("times"));
-    const text = await times.getText();
-    const noTimes = text.includes(noTimesAvailable);
-    if (noTimes) {
-        console.log('no times available');
-        return [];
-    }
-
-    // find li with times classname
-    const timesItems = await times.findElements(By.xpath(`//h4[contains(text(),${process.env.HOUR})]`))
-
-    // book time
-    if (timesItems.length) {
-      const openTimes = await Promise.all(timesItems.map(async item => await item.getText()));
-      return openTimes;
-    }
-
-    return [];
-};
-
-// changes the course drop down
-const selectCourse = async function(driver, course) {
-    console.log(`selecting course ${course}`);
-    const select = await driver.findElement(By.xpath(`//option[contains(text(), '${course}')]`));
-    await select.click();
-};
-
-const sendText = async function(times, course) {
-  const accountSid = process.env.TWSID;
-  const authToken = process.env.TWATOKEN;
-  const client = twilio(accountSid, authToken);
-
-  client.messages
-  .create({
-     body: `\nAVAILABLE TIMES\n${course}\n${times}`,
-     from: process.env.NUMBERFM,
-     to: process.env.NUMBERTO
-   })
-  .then(message => console.log(message.sid));
-}
