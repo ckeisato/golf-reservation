@@ -84,8 +84,12 @@ const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`)
     // console.log('valid times', times);
 
     // send text
-    await sendText(times, courses[i].name);
+    if (times.length) {
+      await sendText(times, courses[i].name);
+    }
   }
+
+  await browser.close();
 
 })();
 
