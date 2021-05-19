@@ -1,18 +1,33 @@
 const puppeteer = require('puppeteer');
+const twilio = require("twilio");
 const dotenv = require("dotenv");
 dotenv.config();
 
 const sleep = 700;
-const noTimesAvailable = "Use Time/Day filters to find desired teetime";
 const courses = [
-  2433, // "Bethpage Blue Course",
-  2431, // "Bethpage Black Course",
-  2434, // "Bethpage Green Course",
-  2432, // "Bethpage Red Course",
-  2435, // "Bethpage Yellow Course"
+  {
+    name: "Bethpage Blue Course",
+    id: "2433"
+  },
+  {
+    name: "Bethpage Black Course",
+    id: "2431",
+  },
+  {
+    name: "Bethpage Green Course",
+    id: "2434"
+  },
+  {
+    name: "Bethpage Red Course",
+    id: "2432"
+  },
+  {
+    name: "Bethpage Yellow Course",
+    id: "2435"
+  }
 ];
 
-const meridian = "pm";
+const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`);
 
 (async () => {
   // const browser = await puppeteer.launch();
@@ -33,40 +48,57 @@ const meridian = "pm";
 
   await page.type("#login_email", process.env.BPUSER);
   await page.type("#login_password", process.env.BPPASS);
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(sleep);
   await page.click("#login .modal-footer button.btn")
   await page.waitForSelector("#login", { hidden: true });
 
   // go to tee times page
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(sleep);
   await page.click("#page .btn");
 
   // select morning times
-  // await page.click("#page [data-value=morning]");
+  await page.click("#page [data-value=morning]");
 
   // select date
   await page.evaluate(() => document.getElementById('date-field').value='');
   await page.type("#page #date-field", process.env.DATE);
-  await page.keyboard.press("Enter");  
+  await page.$eval("#page #date-field", e => e.blur());
+
   // iterate through courses
   for (let i = 0; i < courses.length; i++) {
+    // console.log("course", courses[i].name);
+    await page.select("#page #schedule_select", String(courses[i].id));
 
-    console.log("course", courses[i]);
-    // set course
-    await page.evaluate((course) => {
-      document.querySelector(`#page #schedule_select [value='${course}']`).setAttribute("selected", true);
-    }, courses[i]);
+    // select number of players
+    await page.click(`#page [data-value='${String(process.env.PLAYERS)}']`);
 
     // get times
     await page.waitForTimeout(sleep);
     const timeElements = await page.$$("#page #times li h4.start");
-    const times = await Promise.all(timeElements.map(
+    let times = await Promise.all(timeElements.map(
       item => page.evaluate(val => val.textContent, item)));
+    // console.log(times);
 
-    console.log(times);
 
+    times = times.filter(item => timeRegExp.test(item));
+    // console.log('valid times', times);
 
+    // send text
+    await sendText(times, courses[i].name);
   }
 
 })();
 
+const sendText = async function(times, course) {
+  const accountSid = process.env.TWSID;
+  const authToken = process.env.TWATOKEN;
+  const client = twilio(accountSid, authToken);
+
+  client.messages
+  .create({
+     body: `\nAVAILABLE TIMES\n${course}\n${times}`,
+     from: process.env.NUMBERFM,
+     to: process.env.NUMBERTO
+   })
+  .then(message => console.log(message.sid));
+}
