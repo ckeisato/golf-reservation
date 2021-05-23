@@ -59,38 +59,39 @@ const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`)
   // select morning times
   await page.click("#page [data-value=morning]");
 
-  // select date
-  await page.evaluate(() => document.getElementById('date-field').value='');
-  await page.type("#page #date-field", process.env.DATE);
-  await page.$eval("#page #date-field", e => e.blur());
+  const dates = getNextWeekendDates();
+  for (let j = 0; j < dates.length; j++) {
+    await page.evaluate(() => document.getElementById('date-field').value='');
+    await page.type("#page #date-field", dates[j]);
+    await page.$eval("#page #date-field", e => e.blur());
 
-  // iterate through courses
-  for (let i = 0; i < courses.length; i++) {
-    // console.log("course", courses[i].name);
-    await page.select("#page #schedule_select", String(courses[i].id));
+    // iterate through courses
+    for (let i = 0; i < courses.length; i++) {
+      // console.log("course", courses[i].name);
+      await page.select("#page #schedule_select", String(courses[i].id));
 
-    // select number of players
-    await page.click(`#page [data-value='${String(process.env.PLAYERS)}']`);
+      // select number of players
+      await page.click(`#page [data-value='${String(process.env.PLAYERS)}']`);
 
-    // get times
-    await page.waitForTimeout(sleep);
-    const timeElements = await page.$$("#page #times li h4.start");
-    let times = await Promise.all(timeElements.map(
-      item => page.evaluate(val => val.textContent, item)));
-    // console.log(times);
+      // get times
+      await page.waitForTimeout(sleep);
+      const timeElements = await page.$$("#page #times li h4.start");
+      let times = await Promise.all(timeElements.map(
+        item => page.evaluate(val => val.textContent, item)));
+      // console.log(times);
 
 
-    times = times.filter(item => timeRegExp.test(item));
-    // console.log('valid times', times);
+      times = times.filter(item => timeRegExp.test(item));
+      // console.log('valid times', times);
 
-    // send text
-    if (times.length) {
-      await sendText(times, courses[i].name);
+      // send text
+      if (times.length) {
+        await sendText(times, courses[i].name);
+      }
     }
   }
 
   await browser.close();
-
 })();
 
 const sendText = async function(times, course) {
@@ -105,4 +106,22 @@ const sendText = async function(times, course) {
      to: process.env.NUMBERTO
    })
   .then(message => console.log(message.sid));
+}
+
+const formatDate = date => `${(date.getMonth() + 1)}-${date.getDate()}-${date.getFullYear()}`;
+
+const getNextWeekendDates = () => {
+  const singleDay = 86400000;
+  const today = new Date();
+
+  // today is Saturday, just return next Saturday
+  if (today.getDay() == 6) {
+    const nextSaturday = new Date(today.getTime() + 7 * singleDay);
+    return [formatDate(nextSaturday)];
+  }
+
+  return [
+    formatDate(new Date(today.getTime() + singleDay * Math.abs(6 - today.getDay()))),
+    formatDate(new Date(today.getTime() + singleDay * Math.abs(7 - today.getDay()))),
+  ]
 }
