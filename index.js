@@ -58,7 +58,9 @@ const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`)
   await page.click("#page .btn");
 
   // select morning times
-  await page.click("#page [data-value=morning]");
+  // await page.click("#page [data-value=morning]");
+    await page.click("#page [data-value=all]");
+
 
   const dates = getNextWeekendDates();
   for (let j = 0; j < dates.length; j++) {
@@ -68,7 +70,7 @@ const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`)
 
     // iterate through courses
     for (let i = 0; i < courses.length; i++) {
-      // console.log("course", courses[i].name);
+      console.log("course", courses[i].name);
       await page.select("#page #schedule_select", String(courses[i].id));
 
       // select number of players
@@ -79,15 +81,16 @@ const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`)
       const timeElements = await page.$$("#page #times li h4.start");
       let times = await Promise.all(timeElements.map(
         item => page.evaluate(val => val.textContent, item)));
-      // console.log(times);
+      console.log(times);
 
 
       times = times.filter(item => timeRegExp.test(item));
-      // console.log('valid times', times);
+      console.log('valid times', times);
 
       // send text
       if (times.length) {
-        await sendText(times, courses[i].name);
+        console.log("Sending text", times, courses[i].name);
+        await sendText(dates[j], times, courses[i].name);
       }
     }
   }
@@ -95,14 +98,13 @@ const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`)
   await browser.close();
 })();
 
-const sendText = async function(times, course) {
+const sendText = async function(date, times, course) {
   const accountSid = process.env.TWSID;
   const authToken = process.env.TWATOKEN;
   const client = twilio(accountSid, authToken);
 
-  client.messages
-  .create({
-     body: `\nAVAILABLE TIMES\n${course}\n${times}`,
+  client.messages.create({
+     body: `\nAVAILABLE TIMES\n${date}\n${course}\n${times}`,
      from: process.env.NUMBERFM,
      to: process.env.NUMBERTO
    })
