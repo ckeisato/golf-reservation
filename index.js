@@ -28,6 +28,7 @@ const courses = [
 ];
 
 const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`);
+// const browser = await puppeteer.launch({args: [‘--no-sandbox’]});
 
 (async () => {
   // const browser = await puppeteer.launch();
