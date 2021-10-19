@@ -1,20 +1,9 @@
 # golf-reservation
-todo:
-- cleanup: change selectors to use xpath to search for visible text
-- cleanup: date picker selector?
 
+TODO:
 
-7pm booker:
-- GCP function, at 6:59:500 executes function
-  - start up before then execute
-- checks availability
-- given hour, books first option within the hour
-
-
-schedule polling:
-- runs every 10 min
-- checks for available times 
-    - each day
-    - each course
-- sends availablity by text/email
-
+- GCP CLI deploy script
+- consolidate functionality...
+- create static site for write up/demo
+    - given date and time, will set back valid golf times
+    - does not use twilio
