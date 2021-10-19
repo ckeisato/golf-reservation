@@ -130,9 +130,8 @@ exports.findTimes = async (req, res) => {
       }
     }
     await browser.close();
-    res.status(200).send("OK");
   }
   catch(error){
-    res.status(500).send(error);
+    console.log(error);
   }
 };

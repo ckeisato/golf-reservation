@@ -4,6 +4,6 @@ gcloud functions deploy bethpage \
 	--allow-unauthenticated \
 	--trigger-topic=bethpage \
 	--source=gcp \
-	--entry-point=index \
+	--entry-point=findTimes \
 	--stage-bucket=golfreservation \
-	# --build-env-vars-file=var.yaml
+	--env-vars-file=var.yaml
