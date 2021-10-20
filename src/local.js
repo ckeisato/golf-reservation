@@ -1,37 +1,17 @@
 const puppeteer = require('puppeteer');
-const twilio = require("twilio");
+const util = require('./util');
+
 const dotenv = require("dotenv");
 dotenv.config();
 
-const sleep = 700;
-const courses = [
-  {
-    name: "Bethpage Blue Course",
-    id: "2433"
-  },
-  {
-    name: "Bethpage Black Course",
-    id: "2431",
-  },
-  {
-    name: "Bethpage Green Course",
-    id: "2434"
-  },
-  {
-    name: "Bethpage Red Course",
-    id: "2432"
-  },
-  {
-    name: "Bethpage Yellow Course",
-    id: "2435"
-  }
-];
+const sleep = util.sleep;
+const courses = util.courses;
+const sendText = util.sendText;
+const getNextWeekendDates = util.getNextWeekendDates;
 
 const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`);
-// const browser = await puppeteer.launch({args: [‘--no-sandbox’]});
 
 (async () => {
-  // const browser = await puppeteer.launch();
   const browser = await puppeteer.launch({
     headless: false
   });
@@ -98,33 +78,3 @@ const timeRegExp = new RegExp(`^(${process.env.HOUR}:([0-5][0-9])([AaPp][Mm]))`)
   await browser.close();
 })();
 
-const sendText = async function(date, times, course) {
-  const accountSid = process.env.TWSID;
-  const authToken = process.env.TWATOKEN;
-  const client = twilio(accountSid, authToken);
-
-  client.messages.create({
-     body: `\nAVAILABLE TIMES\n${date}\n${course}\n${times}`,
-     from: process.env.NUMBERFM,
-     to: process.env.NUMBERTO
-   })
-  .then(message => console.log(message.sid));
-}
-
-const formatDate = date => `${(date.getMonth() + 1)}-${date.getDate()}-${date.getFullYear()}`;
-
-const getNextWeekendDates = () => {
-  const singleDay = 86400000;
-  const today = new Date();
-
-  // today is Saturday, just return next Saturday
-  if (today.getDay() == 6) {
-    const nextSaturday = new Date(today.getTime() + 7 * singleDay);
-    return [formatDate(nextSaturday)];
-  }
-
-  return [
-    formatDate(new Date(today.getTime() + singleDay * Math.abs(6 - today.getDay()))),
-    formatDate(new Date(today.getTime() + singleDay * Math.abs(7 - today.getDay()))),
-  ]
-}

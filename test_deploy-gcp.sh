@@ -3,6 +3,6 @@ gcloud functions deploy gcptest \
 	--memory=128MB \
 	--allow-unauthenticated \
 	--trigger-http \
-	--source=test \
+	--source=test_gcp \
 	--entry-point=index \
 	--stage-bucket=golfreservationtest12345
