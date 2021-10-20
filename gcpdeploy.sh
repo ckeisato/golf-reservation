@@ -3,7 +3,7 @@ gcloud functions deploy bethpage \
 	--memory=1GB \
 	--allow-unauthenticated \
 	--trigger-topic=bethpage \
-	--source=gcp \
+	--source=src_gcp \
 	--entry-point=findTimes \
 	--stage-bucket=golfreservation \
 	--env-vars-file=var.yaml
