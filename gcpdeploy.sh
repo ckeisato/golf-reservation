@@ -1,3 +1,5 @@
+cp src/util.js src_gcp/
+
 gcloud functions deploy bethpage \
 	--runtime=nodejs12 \
 	--memory=1GB \
