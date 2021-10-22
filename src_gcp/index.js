@@ -77,7 +77,7 @@ exports.findTimes = async (req, res) => {
 
         // send text
         if (times.length) {
-          await sendText(times, courses[i].name);
+          await sendText(dates[j], times, courses[i].name);
         }
       }
     }

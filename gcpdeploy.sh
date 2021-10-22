@@ -8,4 +8,9 @@ gcloud functions deploy bethpage \
 	--source=src_gcp \
 	--entry-point=findTimes \
 	--stage-bucket=golfreservation \
-	--env-vars-file=var.yaml
+	--env-vars-file=gcpvar.yaml
+
+
+gcloud scheduler jobs update pubsub golfCheck \
+	--topic=projects/golf-reservation-314002/topics/bethpage \
+	--schedule="*/10 9-22 * * 5-6"
