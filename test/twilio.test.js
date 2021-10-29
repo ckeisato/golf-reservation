@@ -21,6 +21,8 @@ const sendText = async function(times, course) {
   const authToken = process.env.TWATOKEN;
   const client = twilio(accountSid, authToken);
 
+  console.log(process.env.NUMBERTO);
+
   client.messages.create({
      body: `\nAVAILABLE TIMES\n${course}\n${times}`,
      from: process.env.NUMBERFM,

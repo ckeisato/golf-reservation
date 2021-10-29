@@ -13,4 +13,4 @@ gcloud functions deploy bethpage \
 
 gcloud scheduler jobs update pubsub golfCheck \
 	--topic=projects/golf-reservation-314002/topics/bethpage \
-	--schedule="*/10 9-22 * * 5-6"
+	--schedule="*/5 9-22 * * 5-6"

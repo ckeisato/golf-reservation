@@ -4,6 +4,9 @@ const util = require('./util');
 const dotenv = require("dotenv");
 dotenv.config();
 
+console.log(process.env.NUMBERTO);
+console.log(process.env.HOUR)
+
 const sleep = util.sleep;
 const courses = util.courses;
 const sendText = util.sendText;
